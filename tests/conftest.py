@@ -26,6 +26,7 @@ except ImportError:
         return "master"
 
 
+#TODO Exempt from vulture
 def pytest_addoption(parser: Parser) -> None:
     """
     Accept --evm-trace option in pytest.
@@ -49,6 +50,7 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
+#TODO Exempt from vulture
 def pytest_configure(config: Config) -> None:
     """
     Configure the ethereum module and log levels to output evm trace.
@@ -164,6 +166,7 @@ class _FixturesDownloader:
 fixture_lock = StashKey[Optional[FileLock]]()
 
 
+#TODO Exempt from vulture
 def pytest_sessionstart(session: Session) -> None:  # noqa: U100
     if get_xdist_worker_id(session) != "master":
         return
@@ -193,6 +196,7 @@ def pytest_sessionstart(session: Session) -> None:  # noqa: U100
                 )
 
 
+#TODO Exempt from vulture
 def pytest_sessionfinish(
     session: Session, exitstatus: int  # noqa: U100
 ) -> None:

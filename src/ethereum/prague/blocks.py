@@ -33,6 +33,7 @@ from .transactions import (
 class Withdrawal:
     """
     Withdrawals that have been validated on the consensus layer.
+    TODO: mark ignored for vulture
     """
 
     index: U64

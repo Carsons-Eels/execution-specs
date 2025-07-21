@@ -109,6 +109,7 @@ class TransactionEnvironment:
     index_in_block: Optional[Uint]
     tx_hash: Optional[Hash32]
     traces: List[dict]
+    warm_code_addresses: Set[Address]
 
 
 @dataclass

@@ -240,30 +240,12 @@ def process_message(message: Message) -> Evm:
     # take snapshot of state before processing the message
     begin_transaction(state, transient_storage)
 
-    # from EIP-7907 (5)
-    #
-    # If a large contract is the entry point of a transaction, the cost
-    # calculated in (2) is charged before the execution and contract code is
-    # marked as warm. This fee is not calculated towards the initial gas fee.
-    # In case of out-of-gas halt, execution will stop and the balance will not
-    # be transferred.
-    #
-    # "The entry point is the "to" field of a transaction - Mario
-    #
-    # So... charging the cold/warm gas should happen before this block, but how
-    # do I do that if I don't have access to the EVM yet that I get inside the
-    # execute_code function?
-    #
-    # Can I just move this block below execute_code and before checking for an
-    # error? That seems incorrect, because it probably violates some EIP for
-    # the order of operations in a transcation. How do I verify this? If not,
-    # then this would seem to solve that problem?
-    evm = execute_code(message)
-
     if message.should_transfer_value and message.value != 0:
         move_ether(
             state, message.caller, message.current_target, message.value
         )
+
+    evm = execute_code(message)
 
     if evm.error:
         # revert state to the last saved checkpoint
@@ -318,13 +300,6 @@ def execute_code(message: Message) -> Evm:
             PRE_COMPILED_CONTRACTS[evm.message.code_address](evm)
             evm_trace(evm, PrecompileEnd())
             return evm
-
-        # Charge gas for cold code
-        if message.depth == 0:
-            entrypoint_cost = GAS_COLD_SLOAD + code_access_cost(
-                get_account(message.block_env.state, message.current_target).code
-            )
-            charge_gas(evm, entrypoint_cost)
 
         while evm.running and evm.pc < ulen(evm.code):
             try:

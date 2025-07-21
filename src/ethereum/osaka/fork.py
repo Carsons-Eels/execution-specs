@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
 from ethereum_rlp import rlp
-from ethereum_types.bytes import Bytes
+from ethereum_types.bytes import Bytes, Bytes0
 from ethereum_types.numeric import U64, U256, Uint
 
 from ethereum.crypto.hash import Hash32, keccak256
@@ -80,10 +80,12 @@ from .utils.message import prepare_message
 from .vm import Message
 from .vm.eoa_delegation import is_valid_delegation
 from .vm.gas import (
+    GAS_COLD_SLOAD,
     calculate_blob_gas_price,
     calculate_data_fee,
     calculate_excess_blob_gas,
     calculate_total_blob_gas,
+    code_access_cost,
 )
 from .vm.interpreter import MessageCallOutput, process_message_call
 
@@ -390,7 +392,7 @@ def check_transaction(
     block_env: vm.BlockEnvironment,
     block_output: vm.BlockOutput,
     tx: Transaction,
-) -> Tuple[Address, Uint, Tuple[VersionedHash, ...], U64]:
+) -> Tuple[Address, Uint, Tuple[VersionedHash, ...], U64, Uint]:
     """
     Check if the transaction is includable in the block.
 
@@ -413,6 +415,9 @@ def check_transaction(
         The blob versioned hashes of the transaction.
     tx_blob_gas_used:
         The blob gas used by the transaction.
+    entry_point_gas:
+        The gas that is charged for calling a large (>24KB) contract
+
 
     Raises
     ------
@@ -458,6 +463,11 @@ def check_transaction(
 
     sender_address = recover_sender(block_env.chain_id, tx)
     sender_account = get_account(block_env.state, sender_address)
+
+    large_contract_gas = Uint(0)
+    if tx.to != Bytes0(b""):
+        to_account = get_account(block_env.state, tx.to)
+        large_contract_gas += GAS_COLD_SLOAD + code_access_cost(to_account.code)
 
     if isinstance(
         tx, (FeeMarketTransaction, BlobTransaction, SetCodeTransaction)
@@ -528,6 +538,7 @@ def check_transaction(
         effective_gas_price,
         blob_versioned_hashes,
         tx_blob_gas_used,
+        large_contract_gas
     )
 
 
@@ -857,6 +868,7 @@ def process_transaction(
         effective_gas_price,
         blob_versioned_hashes,
         tx_blob_gas_used,
+        large_contract_gas,
     ) = check_transaction(
         block_env=block_env,
         block_output=block_output,
@@ -872,7 +884,7 @@ def process_transaction(
 
     effective_gas_fee = tx.gas * effective_gas_price
 
-    gas = tx.gas - intrinsic_gas
+    gas = tx.gas - intrinsic_gas - large_contract_gas
     increment_nonce(block_env.state, sender)
 
     sender_balance_after_gas_fee = (
@@ -899,9 +911,15 @@ def process_transaction(
             for slot in access.slots:
                 access_list_storage_keys.add((access.account, slot))
 
+    # TODO Mark entry point code as warm
+
     authorizations: Tuple[Authorization, ...] = ()
     if isinstance(tx, SetCodeTransaction):
         authorizations = tx.authorizations
+
+    warm_code_addresses = set()
+    if tx.to != Bytes0(b""):
+        warm_code_addresses.add(tx.to)
 
     tx_env = vm.TransactionEnvironment(
         origin=sender,
@@ -915,6 +933,7 @@ def process_transaction(
         index_in_block=index,
         tx_hash=get_transaction_hash(encode_transaction(tx)),
         traces=[],
+        warm_code_addresses=warm_code_addresses,
     )
 
     message = prepare_message(block_env, tx_env, tx)

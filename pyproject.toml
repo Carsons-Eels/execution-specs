@@ -289,6 +289,7 @@ exclude = [
     '^\.venv/',
     '^\.vscode/',
     'tests/fixtures/*',
+    'eest_tests/*',
     'vulture_whitelist.py',
 ]
 line-length = 79
@@ -313,15 +314,39 @@ fixable = [
     "D", # pydocstyle
 ]
 ignore = [
-# All of these are from EEST
-    #    "D205",     # Missing blank line after summary
-    #    "D203",     # 1 blank line required before class docstring
-    #    "D212",     # Multi-line docstring summary should start at the first line
-    #    "D415",     # First line should end with a ".", "?", or "!"
-    #    "C420",     # Unnecessary dict comprehension
-    #    "C901",     # Function is too complex
-    #    "A005",     # stdlib module shadowing
+# Common to STEEL
+    "D205",     # Missing blank line after summary
+    "D203",     # 1 blank line required before class docstring
+    "D212",     # Multi-line docstring summary should start at the first line
+    "D415",     # First line should end with a ".", "?", or "!"
+
+# Specific to EELS
+    "D107",     # Missing docstring in __init__
+    "D200",     # One-line docstring should fit on one line with quotes
+    "D205",     # 1 blank line required between summary and description
+    "D400",     # First line should end with a period
+    "D401",     # First line should be in imperative mood ("Do", not "Does")
+    "D410",     # Missing blank line after last section (Args, Returns, Raises)
+    "D411",     # Missing blank line before last section
+    "D412",     # No blank lines between sections
+    "D413",     # Missing blank line after last section (same as 410)
+    "D414",     # Section should end with a period
+    "D416",     # Section names should be in the correct order
+    "E203",     # Whitespace before ':'
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "D100",         # Missing docstring in public module
+    "D101",         # Missing docstring in public class
+    "D103",         # Missing docstring in public function
+    "D104",         # Missing docstring in public package
+    "E501",         # Line too long
+]
+
+[tool.ruff.lint.mccabe]
+# Set the maximum allowed cyclomatic complexity. C901 default is 10.
+max-complexity = 7
 
 [tool.uv]
 required-version = ">=0.7.0"

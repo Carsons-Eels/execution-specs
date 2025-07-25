@@ -296,6 +296,10 @@ files = [
 path = "docs"
 extension = ".html"
 
+[tool.vulture]
+exclude = ["tests/fixtures/", "eest_tests/"]
+ignore_names = ["pytest_*"]
+
 [tool.ruff]
 exclude = [
     '^\.cache/',

@@ -66,7 +66,7 @@ def pairwise(iterable: Iterable[G]) -> Iterable[Tuple[G, G]]:
     """
     a, b = tee(iterable)
     next(b, None)
-    return zip(a, b, strict=False)
+    return zip(a, b)
 
 
 class EthereumDiscover(Discover):
@@ -617,7 +617,10 @@ class _DoccAdapter(Adapter[Node]):
             rights = list(rhs.children)
             if len(lefts) != len(rights):
                 return False
-            return all(self.deep_equals(a, b) for a, b in zip(lefts, rights, strict=False))
+            return all(
+                self.deep_equals(a, b)
+                for a, b in zip(lefts, rights)
+            )
 
         elif isinstance(lhs, verbatim.Highlight):
             assert isinstance(rhs, verbatim.Highlight)

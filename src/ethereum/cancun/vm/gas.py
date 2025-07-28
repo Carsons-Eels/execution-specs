@@ -253,7 +253,7 @@ def max_message_call_gas(gas: Uint) -> Uint:
 
 def init_code_cost(init_code_length: Uint) -> Uint:
     """
-    Calculates the gas to be charged for the init code in CREAT*
+    Calculates the gas to be charged for the init code in CREATE*
     opcodes as well as create transactions.
 
     Parameters

@@ -163,6 +163,7 @@ test = [
     "requests-cache>=1.2.1,<2",
 ]
 lint = [
+    "codespell==2.4.1",
     "mypy==1.14.1",
     "ruff==0.11.8",
     "vulture==2.14.0",
@@ -347,6 +348,26 @@ ignore = [
 [tool.ruff.lint.mccabe]
 # Set the maximum allowed cyclomatic complexity. C901 default is 10.
 max-complexity = 7
+
+[tool.codespell]
+builtin = "clear,code,usage"    # Built-in dictionaries to use
+skip = [                        # Don't check these files/folders
+    ".git/*",
+    ".tox/*",
+    ".venv/*",
+    "build/*",
+    "dist/*",
+    "*.pyc",
+    "ethereum_execution.egg-info/*",
+    "*.coverage*",
+    "__pycache__",
+    ".ruff_cache",
+    "fixtures",
+    "tests/fixtures/*",
+    "eest_tests",
+]
+count = true                    # Display counts of errors
+check-hidden = false            # Don't check hidden files (starting with .)
 
 [tool.uv]
 required-version = ">=0.7.0"

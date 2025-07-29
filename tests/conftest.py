@@ -21,7 +21,7 @@ try:
     from xdist import get_xdist_worker_id  # type: ignore[import-untyped]
 except ImportError:
 
-    def get_xdist_worker_id(request_or_session: object) -> str:  # noqa: U100
+    def get_xdist_worker_id(request_or_session: object) -> str:
         del request_or_session
         return "master"
 
@@ -174,7 +174,7 @@ class _FixturesDownloader:
 fixture_lock = StashKey[Optional[FileLock]]()
 
 
-def pytest_sessionstart(session: Session) -> None:  # noqa: U100
+def pytest_sessionstart(session: Session) -> None:
     if get_xdist_worker_id(session) != "master":
         return
 
@@ -204,7 +204,7 @@ def pytest_sessionstart(session: Session) -> None:  # noqa: U100
 
 
 def pytest_sessionfinish(
-    session: Session, exitstatus: int  # noqa: U100
+    session: Session, exitstatus: int
 ) -> None:
     del exitstatus
     if get_xdist_worker_id(session) != "master":

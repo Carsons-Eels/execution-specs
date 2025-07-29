@@ -1012,13 +1012,14 @@ class _MinimizeDiffsVisitor(Visitor):
 
 
 def render_diff(
-    context: object,  # noqa: U100
+    context: object,
     parent: object,
     diff: object,
 ) -> html.RenderResult:
     """
     Render a DiffNode.
     """
+    del context
     assert isinstance(diff, DiffNode)
     assert isinstance(parent, (html.HTMLTag, html.HTMLRoot))
     parent_: Union[html.HTMLTag, html.HTMLRoot] = parent

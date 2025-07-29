@@ -45,7 +45,7 @@ def b11r_tool_test(test_case: Dict) -> None:
         b11r_tool = B11R(options, sys.stdout, sys.stdin)
         b11r_tool.build_block()
     except Exception as e:
-        raise FatalException(e)
+        raise FatalException(e) from e
 
     # json_result = b11r_tool.result.to_json()
     with open(test_case["expected"], "r") as f:

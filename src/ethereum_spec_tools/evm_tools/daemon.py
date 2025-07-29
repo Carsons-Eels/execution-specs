@@ -46,8 +46,8 @@ class _EvmToolHandler(BaseHTTPRequestHandler):
         content_bytes = self.rfile.read(content_length)
         content = json.loads(content_bytes)
 
-        input_string = json.dumps(content["input"])
-        input = StringIO(input_string)
+        input_string = json.dumps(content["input"])     # noqa A001
+        input = StringIO(input_string)                  # noqa A001
 
         args = [
             "t8n",

@@ -36,7 +36,7 @@ from .utils import add_item
 
 Address = Bytes20
 Root = Hash32
-Account_ = Any
+Account_ = Any      # noqa N806
 
 
 class UnmodifiedType:

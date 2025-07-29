@@ -39,7 +39,7 @@ class _EvmToolHandler(BaseHTTPRequestHandler):
         """Don't log requests"""
         pass
 
-    def do_POST(self) -> None:
+    def do_POST(self) -> None:                          # noqa N802
         from . import main
 
         content_length = int(self.headers["Content-Length"])

@@ -206,9 +206,9 @@ class Txs:
 
         secret_key = hex_to_uint(json_tx["secretKey"][2:])
         if t8n.fork.is_after_fork("ethereum.berlin"):
-            Transaction = t8n.fork.LegacyTransaction
+            Transaction = t8n.fork.LegacyTransaction    # noqa N806
         else:
-            Transaction = t8n.fork.Transaction
+            Transaction = t8n.fork.Transaction          # noqa N806
 
         v_addend: U256
         if isinstance(tx_decoded, Transaction):

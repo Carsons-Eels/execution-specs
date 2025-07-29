@@ -45,16 +45,16 @@ class Trace:
     pc: int
     op: Optional[Union[str, int]]
     gas: str
-    gasCost: str
+    gas_cost: str
     memory: Optional[str]
-    memSize: int
+    mem_size: int
     stack: Optional[List[str]]
-    returnData: Optional[str]
+    return_data: Optional[str]
     depth: int
     refund: int
-    opName: str
-    gasCostTraced: bool = False
-    errorTraced: bool = False
+    op_name: str
+    gas_cost_traced: bool = False
+    error_traced: bool = False
     precompile: bool = False
     error: Optional[str] = None
 
@@ -66,7 +66,7 @@ class FinalTrace:
     """
 
     output: str
-    gasUsed: str
+    gas_used: str
     error: Optional[str] = None
 
     def __init__(

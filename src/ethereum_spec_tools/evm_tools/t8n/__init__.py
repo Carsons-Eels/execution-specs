@@ -19,7 +19,7 @@ from ethereum_spec_tools.forks import Hardfork
 from ..loaders.fixture_loader import Load
 from ..loaders.fork_loader import ForkLoad
 from ..utils import (
-    FatalException,
+    FatalError,
     get_module_name,
     get_stream_logger,
     parse_hex_or_int,
@@ -307,7 +307,7 @@ class T8N(Load):
                 self.run_state_test()
             else:
                 self.run_blockchain_test()
-        except FatalException as e:
+        except FatalError as e:
             self.logger.error(str(e))
             return 1
 

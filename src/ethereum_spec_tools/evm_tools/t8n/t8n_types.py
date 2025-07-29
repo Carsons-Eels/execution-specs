@@ -13,7 +13,7 @@ from ethereum.crypto.hash import Hash32, keccak256
 from ethereum.utils.hexadecimal import hex_to_bytes, hex_to_u256, hex_to_uint
 
 from ..loaders.transaction_loader import TransactionLoad, UnsupportedTx
-from ..utils import FatalException, encode_to_hex, secp256k1_sign
+from ..utils import FatalError, encode_to_hex, secp256k1_sign
 
 if TYPE_CHECKING:
     from . import T8N
@@ -237,7 +237,7 @@ class Txs:
             signing_hash = t8n.fork.signing_hash_7702(tx_decoded)
             v_addend = U256(0)
         else:
-            raise FatalException("Unknown transaction type")
+            raise FatalError("Unknown transaction type")
 
         r, s, y = secp256k1_sign(signing_hash, int(secret_key))
         json_tx["r"] = hex(r)

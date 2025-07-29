@@ -12,7 +12,7 @@ from ethereum_types.numeric import U64, U256, Uint
 from ethereum.crypto.hash import Hash32, keccak256
 from ethereum.utils.hexadecimal import hex_to_bytes, hex_to_u256, hex_to_uint
 
-from ..loaders.transaction_loader import TransactionLoad, UnsupportedTx
+from ..loaders.transaction_loader import TransactionLoad, UnsupportedTxError
 from ..utils import FatalError, encode_to_hex, secp256k1_sign
 
 if TYPE_CHECKING:
@@ -116,7 +116,7 @@ class Txs:
                 else:
                     self.transactions.append(self.parse_json_tx(raw_tx))
                     self.successfully_parsed.append(idx)
-            except UnsupportedTx as e:
+            except UnsupportedTxError as e:
                 self.t8n.logger.warning(
                     f"Unsupported transaction type {idx}: "
                     f"{e.error_message}"

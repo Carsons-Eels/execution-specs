@@ -345,6 +345,12 @@ ignore = [
     "D104",         # Missing docstring in public package
     "E501",         # Line too long
 ]
+"src/ethereum_spec_tools/evm_tools/loaders/fork_loader.py" = [
+    "N802"          # Property names do not need to be lowercase
+]
+"src/ethereum_spec_tools/lint/*" = [
+    "N802"          # Special Linting Code absolved of naming reqs
+]
 
 [tool.ruff.lint.mccabe]
 # Set the maximum allowed cyclomatic complexity. C901 default is 10.
@@ -372,3 +378,6 @@ check-hidden = false            # Don't check hidden files (starting with .)
 
 [tool.uv]
 required-version = ">=0.7.0"
+
+[tool.uv.sources]
+"ethereum-spec-evm-resolver" = { git = "https://github.com/spencer-tb/ethereum-spec-evm-resolver", rev = "38d4d19d9bc9e2aea900aac5c4b511665c294322" }

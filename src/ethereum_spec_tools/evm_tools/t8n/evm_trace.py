@@ -45,16 +45,16 @@ class Trace:
     pc: int
     op: Optional[Union[str, int]]
     gas: str
-    gas_cost: str
+    gasCost: str
     memory: Optional[str]
-    mem_size: int
+    memSize: int
     stack: Optional[List[str]]
-    return_data: Optional[str]
+    returnData: Optional[str]
     depth: int
     refund: int
-    op_name: str
-    gas_cost_traced: bool = False
-    error_traced: bool = False
+    opName: str
+    gasCostTraced: bool = False
+    errorTraced: bool = False
     precompile: bool = False
     error: Optional[str] = None
 

@@ -59,7 +59,7 @@ def get_optimized_state_patches(fork: str) -> Dict[str, Any]:
 
     types_mod = cast(Any, import_module("ethereum." + fork + ".fork_types"))
     state_mod = cast(Any, import_module("ethereum." + fork + ".state"))
-    Account = types_mod.Account
+    Account = types_mod.Account         # noqa N806
 
     has_transient_storage = hasattr(state_mod, "TransientStorage")
 

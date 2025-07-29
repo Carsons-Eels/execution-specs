@@ -349,7 +349,11 @@ ignore = [
     "N802"          # Property names do not need to be lowercase
 ]
 "src/ethereum_spec_tools/lint/*" = [
-    "N802"          # Special Linting Code absolved of naming reqs
+    "N802"          # Special linting code absolved of function naming reqs
+]
+"src/ethereum/crypto/*" = [
+    "N806",         # Special crypto code absolved of variable naming reqs
+    "N802"          # Special crypto code absolved of function naming reqs
 ]
 
 [tool.ruff.lint.mccabe]
@@ -378,6 +382,3 @@ check-hidden = false            # Don't check hidden files (starting with .)
 
 [tool.uv]
 required-version = ">=0.7.0"
-
-[tool.uv.sources]
-"ethereum-spec-evm-resolver" = { git = "https://github.com/spencer-tb/ethereum-spec-evm-resolver", rev = "38d4d19d9bc9e2aea900aac5c4b511665c294322" }

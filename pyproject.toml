@@ -379,9 +379,13 @@ skip = [                        # Don't check these files/folders
     "fixtures",
     "tests/fixtures/*",
     "eest_tests",
+    "src/ethereum_spec_tools/evm_tools/t8n/*" # Temporary while being re-written
 ]
 count = true                    # Display counts of errors
 check-hidden = false            # Don't check hidden files (starting with .)
 
 [tool.uv]
 required-version = ">=0.7.0"
+
+[tool.uv.sources]
+"ethereum-spec-evm-resolver" = { git = "https://github.com/spencer-tb/ethereum-spec-evm-resolver", rev = "38d4d19d9bc9e2aea900aac5c4b511665c294322" }

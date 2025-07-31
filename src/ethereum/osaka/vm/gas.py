@@ -66,7 +66,6 @@ GAS_COLD_SLOAD = Uint(2100)
 GAS_COLD_ACCOUNT_ACCESS = Uint(2600)
 GAS_WARM_ACCESS = Uint(100)
 GAS_INIT_CODE_WORD_COST = Uint(2)
-GAS_EXCESS_WORD_COST = Uint(2)
 GAS_BLOBHASH_OPCODE = Uint(3)
 GAS_POINT_EVALUATION = Uint(50000)
 
@@ -162,7 +161,7 @@ def calculate_memory_gas_cost(size_in_bytes: Uint) -> Uint:
     try:
         return total_gas_cost
     except ValueError:
-        raise OutOfGasError
+        raise OutOfGasError from ValueError
 
 
 def calculate_gas_extend_memory(
@@ -265,7 +264,7 @@ def max_message_call_gas(gas: Uint) -> Uint:
 
 def init_code_cost(init_code_length: Uint) -> Uint:
     """
-    Calculates the gas to be charged for the init code in CREAT*
+    Calculates the gas to be charged for the init code in CREATE*
     opcodes as well as create transactions.
 
     Parameters

@@ -135,7 +135,7 @@ class _FixturesDownloader:
                     last_exception = e
 
             if last_exception:
-                raise last_exception
+                raise last_exception from None
 
         # Check if the submodule head matches the parent commit
         # If not, update the submodule

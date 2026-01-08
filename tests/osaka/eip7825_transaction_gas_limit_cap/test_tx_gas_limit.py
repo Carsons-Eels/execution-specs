@@ -258,7 +258,7 @@ def test_maximum_gas_refund(
         + Op.PUSH0
         + Op.PUSH1(0)
     ).gas_cost(fork)
-    gas_refund = gas_costs.R_STORAGE_CLEAR
+    gas_refund = gas_costs.REFUND_STORAGE_CLEAR
 
     # EIP-3529: Reduction in refunds
     storage_count = tx_gas_limit_cap // iteration_cost
@@ -307,7 +307,7 @@ def test_maximum_gas_refund(
 def total_cost_floor_per_token(fork: Fork) -> int:
     """Total cost floor per token."""
     gas_costs = fork.gas_costs()
-    return gas_costs.G_TX_DATA_FLOOR_TOKEN_COST
+    return gas_costs.TX_DATA_FLOOR_TOKEN_COST
 
 
 @pytest.mark.xdist_group(name="bigmem")
@@ -486,8 +486,8 @@ def test_tx_gas_limit_cap_access_list_with_diff_keys(
     gas_available = tx_gas_limit_cap - intrinsic_cost()
 
     gas_costs = fork.gas_costs()
-    gas_per_address = gas_costs.G_ACCESS_LIST_ADDRESS
-    gas_per_storage_key = gas_costs.G_ACCESS_LIST_STORAGE
+    gas_per_address = gas_costs.TX_ACCESS_LIST_ADDRESS_COST
+    gas_per_storage_key = gas_costs.TX_ACCESS_LIST_STORAGE_KEY_COST
 
     gas_after_address = gas_available - gas_per_address
     num_storage_keys = gas_after_address // gas_per_storage_key + int(
@@ -571,8 +571,8 @@ def test_tx_gas_limit_cap_access_list_with_diff_addr(
     gas_available = tx_gas_limit_cap - intrinsic_cost()
 
     gas_costs = fork.gas_costs()
-    gas_per_address = gas_costs.G_ACCESS_LIST_ADDRESS
-    gas_per_storage_key = gas_costs.G_ACCESS_LIST_STORAGE
+    gas_per_address = gas_costs.TX_ACCESS_LIST_ADDRESS_COST
+    gas_per_storage_key = gas_costs.TX_ACCESS_LIST_STORAGE_KEY_COST
 
     account_num = gas_available // (
         gas_per_address + gas_per_storage_key
@@ -648,7 +648,7 @@ def test_tx_gas_limit_cap_authorized_tx(
     gas_available = tx_gas_limit_cap - intrinsic_cost()
 
     gas_costs = fork.gas_costs()
-    gas_per_address = gas_costs.G_ACCESS_LIST_ADDRESS
+    gas_per_address = gas_costs.TX_ACCESS_LIST_ADDRESS_COST
 
     per_empty_account_cost = 25_000
     auth_list_length = gas_available // (
@@ -658,7 +658,7 @@ def test_tx_gas_limit_cap_authorized_tx(
     # EIP-7702 authorization transaction cost:
     # 21000 + 16 * non-zero calldata bytes + 4 * zero calldata bytes + 1900 *
     # access list storage key count + 2400 * access list address count +
-    # PER_EMPTY_ACCOUNT_COST * authorization list length
+    # GAS_AUTH_PER_EMPTY_ACCOUNT_COST * authorization list length
     #
     # There is no calldata and no storage keys in this test case and the access
     # address list count is equal to the authorization list length

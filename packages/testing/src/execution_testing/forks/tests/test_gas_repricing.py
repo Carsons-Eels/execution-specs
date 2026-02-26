@@ -48,6 +48,15 @@ class TestLoadRepricingConfig:
         with pytest.raises(ValueError, match="NOT_A_REAL_FIELD"):
             load_repricing_config()
 
+    def test_non_int_value_type(self, monkeypatch, tmp_path):
+        config_file = tmp_path / "bad_type.json"
+        config_file.write_text(
+            json.dumps({"Osaka": {"GAS_TX_BASE": "not_a_number"}})
+        )
+        monkeypatch.setenv(_ENV_VAR, str(config_file))
+        with pytest.raises(TypeError, match="must be of type int"):
+            load_repricing_config()
+
     def test_valid_config(self, monkeypatch, tmp_path):
         config_file = tmp_path / "good.json"
         config_file.write_text(json.dumps({"Osaka": {"GAS_TX_BASE": 25000}}))

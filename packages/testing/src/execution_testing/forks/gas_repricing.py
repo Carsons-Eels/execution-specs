@@ -16,7 +16,8 @@ _VALID_FIELDS = frozenset(f.name for f in fields(GasCosts))
 
 @lru_cache(maxsize=1)
 def load_repricing_config() -> Optional[Dict[str, Dict[str, Any]]]:
-    """Load gas repricing config from the path in EELS_GAS_REPRICING_CONFIG.
+    """
+    Load gas repricing config from the path in EELS_GAS_REPRICING_CONFIG.
 
     Return None if env var is unset or empty.
     Raise FileNotFoundError if the file doesn't exist.
@@ -36,12 +37,18 @@ def load_repricing_config() -> Optional[Dict[str, Dict[str, Any]]]:
         config = json.load(f)
 
     for fork_name, overrides in config.items():
-        for field_name in overrides:
+        for field_name, value in overrides.items():
             if field_name not in _VALID_FIELDS:
                 raise ValueError(
                     f"Unknown GasCosts field '{field_name}' "
                     f"in repricing config for fork '{fork_name}'. "
                     f"Valid fields: {sorted(_VALID_FIELDS)}"
+                )
+            if not isinstance(value, int):
+                raise TypeError(
+                    f"GasCosts field '{field_name}' for fork "
+                    f"'{fork_name}' must be of type int, "
+                    f"got {type(value).__name__}: {value!r}"
                 )
 
     warnings.warn(

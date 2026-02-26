@@ -62,44 +62,6 @@ def _get_opcode_gas_map_sources(fork_class):
     return "\n".join(sources)
 
 
-def _build_source_opcode_field_map(fork_class):
-    """Build opcode→GasCosts fields map by parsing opcode_gas_map source."""
-    source = _get_opcode_gas_map_sources(fork_class)
-    valid_fields = {f.name for f in fields(GasCosts)}
-    opcode_fields = defaultdict(set)
-
-    pattern = re.compile(
-        r"Opcodes\.(\w+)\s*:\s*(.*?)(?=Opcodes\.\w+\s*:|$)",
-        re.DOTALL,
-    )
-    for match in pattern.finditer(source):
-        opcode_name = match.group(1)
-        value_expr = match.group(2)
-        for field_name in valid_fields:
-            if field_name in value_expr:
-                opcode_fields[opcode_name].add(field_name)
-
-    helper_pattern = re.compile(
-        r"def\s+(_with_\w+|_calculate_\w+)\s*\(.*?\)\s*:"
-        r"(.*?)(?=\n    (?:def |@|$))",
-        re.DOTALL,
-    )
-    helper_fields = defaultdict(set)
-    for match in helper_pattern.finditer(source):
-        helper_name = match.group(1)
-        body = match.group(2)
-        for field_name in valid_fields:
-            if field_name in body:
-                helper_fields[helper_name].add(field_name)
-
-    for opcode_name, expr_fields in opcode_fields.items():
-        for helper_name, hf in helper_fields.items():
-            if helper_name in source:
-                pass
-
-    return {k: sorted(v) for k, v in opcode_fields.items()}
-
-
 def _get_helper_method_fields(fork_class):
     """Extract GasCosts fields from helper methods on the fork class."""
     valid_fields = {f.name for f in fields(GasCosts)}

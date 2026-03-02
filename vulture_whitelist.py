@@ -7,11 +7,11 @@ imports. Each bare expression tells Vulture to ignore that specific symbol.
 """
 
 from ethereum.cancun.blocks import Withdrawal
+from ethereum_spec_tools.evm_tools.t8n.transition_tool import EELST8N
 from execution_testing.cli.eest.commands.gas_map import gas_map
 from execution_testing.forks.tests.test_gas_repricing import (
     _clear_repricing_cache,
 )
-from ethereum_spec_tools.evm_tools.t8n.transition_tool import EELST8N
 
 from ethereum.ethash import *
 from ethereum.fork_criteria import Unscheduled

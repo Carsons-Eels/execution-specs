@@ -23,12 +23,12 @@ OPCODE_TIER_FIELDS = (
 )
 
 
-def _get_latest_fork():
+def _get_latest_fork() -> type[BaseFork]:
     """Return the latest fork class."""
     return get_forks()[-1]
 
 
-def _get_fork(fork_name):
+def _get_fork(fork_name: str) -> type[BaseFork]:
     """Return the fork class matching fork_name, or exit with error."""
     for fork in get_forks():
         if fork.name().lower() == fork_name.lower():
@@ -39,7 +39,7 @@ def _get_fork(fork_name):
     )
 
 
-def _build_tier_reverse_map(gas_costs):
+def _build_tier_reverse_map(gas_costs: GasCosts) -> dict[int, list[str]]:
     """Build a reverse map from gas value to opcode tier field names only."""
     reverse = defaultdict(list)
     for name in OPCODE_TIER_FIELDS:
@@ -48,7 +48,7 @@ def _build_tier_reverse_map(gas_costs):
     return dict(reverse)
 
 
-def _get_opcode_gas_map_sources(fork_class):
+def _get_opcode_gas_map_sources(fork_class: type[BaseFork]) -> str:
     """Get source code of opcode_gas_map from the fork's MRO chain."""
     sources = []
     for cls in fork_class.__mro__:
@@ -56,13 +56,20 @@ def _get_opcode_gas_map_sources(fork_class):
             continue
         if "opcode_gas_map" in cls.__dict__:
             try:
-                sources.append(inspect.getsource(cls.opcode_gas_map))
+                # cls is typed as `type` (from __mro__) because it
+                # walks the full chain up to python's default
+                # `object`, and the guard on line 57 ensures that
+                # opcode_gas_map exists before adding the source.
+                method = cls.opcode_gas_map  # type: ignore[attr-defined]
+                sources.append(inspect.getsource(method))
             except (OSError, TypeError):
                 pass
     return "\n".join(sources)
 
 
-def _get_helper_method_fields(fork_class):
+def _get_helper_method_fields(
+    fork_class: type[BaseFork],
+) -> dict[str, set[str]]:
     """Extract GasCosts fields from helper methods on the fork class."""
     valid_fields = {f.name for f in fields(GasCosts)}
     helper_fields = {}
@@ -84,7 +91,9 @@ def _get_helper_method_fields(fork_class):
     return helper_fields
 
 
-def _build_full_opcode_field_map(fork_class):
+def _build_full_opcode_field_map(
+    fork_class: type[BaseFork],
+) -> dict[str, list[str]]:
     """Build complete opcode→GasCosts fields map using source analysis."""
     source = _get_opcode_gas_map_sources(fork_class)
     valid_fields = {f.name for f in fields(GasCosts)}
@@ -123,7 +132,7 @@ def _build_full_opcode_field_map(fork_class):
     return {k: sorted(v) for k, v in opcode_fields.items()}
 
 
-def _format_grouped_output(fork_class):
+def _format_grouped_output(fork_class: type[BaseFork]) -> str:
     """Format the full grouped-by-GasCosts-field output."""
     fork_name = fork_class.name()
     gas_costs = fork_class.gas_costs()
@@ -188,7 +197,7 @@ def _format_grouped_output(fork_class):
     return "\n".join(lines)
 
 
-def _format_single_opcode(fork_class, opcode_name):
+def _format_single_opcode(fork_class: type[BaseFork], opcode_name: str) -> str:
     """Format detailed output for a single opcode."""
     fork_name = fork_class.name()
     gas_costs = fork_class.gas_costs()
@@ -274,7 +283,7 @@ def _format_single_opcode(fork_class, opcode_name):
     default=None,
     help="Show detail for a single opcode.",
 )
-def gas_map(fork_name, opcode_name):
+def gas_map(fork_name: str | None, opcode_name: str | None) -> None:
     """Display the mapping between EVM opcodes and GasCosts field names."""
     if fork_name:
         fork_class = _get_fork(fork_name)

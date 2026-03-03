@@ -4,11 +4,16 @@ import json
 from pathlib import Path
 
 import pytest
+from ethereum.utils.gas_repricing import (
+    _ENV_VAR,
+    apply_spec_repricing,
+    load_repricing_config,
+)
 
 from ..forks.forks import Osaka, Prague
 from ..forks.transition import PragueToOsakaAtTime15k
 from ..gas_costs import GasCosts
-from ..gas_repricing import _ENV_VAR, apply_repricing, load_repricing_config
+from ..gas_repricing import apply_repricing
 
 
 @pytest.fixture(autouse=True)
@@ -42,29 +47,18 @@ class TestLoadRepricingConfig:
         with pytest.raises(FileNotFoundError):
             load_repricing_config()
 
-    def test_invalid_field_name(
+    def test_valid_config_with_unknown_field(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """Test an invalid field name."""
-        config_file = tmp_path / "bad.json"
+        """Test that unknown fields pass the shared loader."""
+        config_file = tmp_path / "unknown.json"
         config_file.write_text(
             json.dumps({"Osaka": {"NOT_A_REAL_FIELD": 999}})
         )
         monkeypatch.setenv(_ENV_VAR, str(config_file))
-        with pytest.raises(ValueError, match="NOT_A_REAL_FIELD"):
-            load_repricing_config()
-
-    def test_non_int_value_type(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-    ) -> None:
-        """Test that a non-int value raises a type error."""
-        config_file = tmp_path / "bad_type.json"
-        config_file.write_text(
-            json.dumps({"Osaka": {"GAS_TX_BASE": "not_a_number"}})
-        )
-        monkeypatch.setenv(_ENV_VAR, str(config_file))
-        with pytest.raises(TypeError, match="must be of type int"):
-            load_repricing_config()
+        with pytest.warns(UserWarning):
+            config = load_repricing_config()
+        assert config is not None
 
     def test_valid_config(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
@@ -130,6 +124,38 @@ class TestApplyRepricing:
         assert result.GAS_TX_BASE == 99999
         assert result.GAS_COLD_ACCOUNT_ACCESS == base.GAS_COLD_ACCOUNT_ACCESS
 
+    def test_invalid_field_name(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """Test that an unknown field raises ValueError."""
+        config_file = tmp_path / "bad.json"
+        config_file.write_text(
+            json.dumps({"Osaka": {"NOT_A_REAL_FIELD": 999}})
+        )
+        monkeypatch.setenv(_ENV_VAR, str(config_file))
+        base = _default_osaka_costs()
+        with pytest.warns(UserWarning):
+            with pytest.raises(ValueError, match="NOT_A_REAL_FIELD"):
+                apply_repricing("Osaka", base)
+
+    def test_non_int_value_type(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """Test that a non-int value raises TypeError."""
+        config_file = tmp_path / "bad_type.json"
+        config_file.write_text(
+            json.dumps({"Osaka": {"GAS_TX_BASE": "not_a_number"}})
+        )
+        monkeypatch.setenv(_ENV_VAR, str(config_file))
+        base = _default_osaka_costs()
+        with pytest.warns(UserWarning):
+            with pytest.raises(TypeError, match="must be of type int"):
+                apply_repricing("Osaka", base)
+
 
 class TestIntegration:
     """Integration tests using the full gas_costs() path."""
@@ -182,3 +208,93 @@ class TestIntegration:
         with pytest.warns(UserWarning):
             costs = PragueToOsakaAtTime15k.gas_costs(timestamp=0)
         assert costs.GAS_TX_BASE == Prague._base_gas_costs().GAS_TX_BASE
+
+
+class TestSpecSideRepricing:
+    """Tests for apply_spec_repricing (module globals mutation)."""
+
+    def _make_globals(self) -> dict:
+        from ethereum_types.numeric import U64, Uint
+
+        return {
+            "GAS_BASE": Uint(2),
+            "GAS_LOW": Uint(5),
+            "BLOB_SCHEDULE_TARGET": U64(6),
+            "__name__": "test_module",
+        }
+
+    def test_no_config(self) -> None:
+        """Test no-op when env var is unset."""
+        globs = self._make_globals()
+        original = dict(globs)
+        apply_spec_repricing("TestFork", globs)
+        assert globs == original
+
+    def test_fork_not_in_config(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """Test no-op when fork is absent from config."""
+        config_file = tmp_path / "other_fork.json"
+        config_file.write_text(json.dumps({"OtherFork": {"GAS_BASE": 99}}))
+        monkeypatch.setenv(_ENV_VAR, str(config_file))
+        globs = self._make_globals()
+        original = dict(globs)
+        with pytest.warns(UserWarning):
+            apply_spec_repricing("TestFork", globs)
+        assert globs == original
+
+    def test_mutates_with_correct_type(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """Test that overrides preserve Uint/U64 type wrappers."""
+        from ethereum_types.numeric import U64, Uint
+
+        config_file = tmp_path / "typed.json"
+        config_file.write_text(
+            json.dumps(
+                {
+                    "TestFork": {
+                        "GAS_BASE": 99,
+                        "BLOB_SCHEDULE_TARGET": 12,
+                    }
+                }
+            )
+        )
+        monkeypatch.setenv(_ENV_VAR, str(config_file))
+        globs = self._make_globals()
+        with pytest.warns(UserWarning):
+            apply_spec_repricing("TestFork", globs)
+        assert globs["GAS_BASE"] == Uint(99)
+        assert isinstance(globs["GAS_BASE"], Uint)
+        assert globs["BLOB_SCHEDULE_TARGET"] == U64(12)
+        assert isinstance(globs["BLOB_SCHEDULE_TARGET"], U64)
+        assert globs["GAS_LOW"] == Uint(5)
+
+    def test_unknown_field_raises(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        """Test that unknown constant names raise ValueError."""
+        config_file = tmp_path / "bad_spec.json"
+        config_file.write_text(
+            json.dumps({"TestFork": {"NOT_A_CONSTANT": 42}})
+        )
+        monkeypatch.setenv(_ENV_VAR, str(config_file))
+        globs = self._make_globals()
+        with pytest.warns(UserWarning):
+            with pytest.raises(ValueError, match="NOT_A_CONSTANT"):
+                apply_spec_repricing("TestFork", globs)
+
+    def test_nonexistent_file_raises(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that a missing config file raises FileNotFoundError."""
+        monkeypatch.setenv(_ENV_VAR, "/nonexistent/config.json")
+        globs = self._make_globals()
+        with pytest.raises(FileNotFoundError):
+            apply_spec_repricing("TestFork", globs)

@@ -56,10 +56,10 @@ def _get_opcode_gas_map_sources(fork_class: type[BaseFork]) -> str:
             continue
         if "opcode_gas_map" in cls.__dict__:
             try:
-                # cls is typed as `type` (from __mro__) because it
-                # walks the full chain up to python's default
-                # `object`, and the guard on line 57 ensures that
-                # opcode_gas_map exists before adding the source.
+                # `cls` is typed as `type` (from `__mro__`)
+                # The full chain up to python's default `object` is walked, and
+                # the guard above ensures that opcode_gas_map exists before
+                # adding the source.
                 method = cls.opcode_gas_map  # type: ignore[attr-defined]
                 sources.append(inspect.getsource(method))
             except (OSError, TypeError):

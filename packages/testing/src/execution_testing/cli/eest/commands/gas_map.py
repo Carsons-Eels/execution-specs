@@ -86,6 +86,8 @@ def _get_helper_method_fields(
                 for field_name in valid_fields:
                     if field_name in src:
                         found.add(field_name)
+                if name == "_with_memory_expansion":
+                    found.add("GAS_MEMORY")
                 if found:
                     helper_fields[name] = found
     return helper_fields

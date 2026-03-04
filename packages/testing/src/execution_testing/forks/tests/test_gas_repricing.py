@@ -1,6 +1,7 @@
 """Tests for gas repricing override mechanism."""
 
 import json
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -17,10 +18,14 @@ from ..gas_repricing import apply_repricing
 
 
 @pytest.fixture(autouse=True)
-def _clear_repricing_cache(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Clear the lru_cache and env var before each test."""
+def _clear_repricing_cache(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[None, None, None]:
+    """Clear the lru_cache and env var before and after each test."""
     load_repricing_config.cache_clear()
     monkeypatch.delenv(_ENV_VAR, raising=False)
+    yield
+    load_repricing_config.cache_clear()
 
 
 def _default_osaka_costs() -> GasCosts:

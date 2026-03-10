@@ -223,21 +223,14 @@ class Frontier(BaseFork, solc_name="homestead"):
             GAS_OPCODE_XOR=3,
             GAS_OPCODE_NOT=3,
             GAS_OPCODE_BYTE=3,
-            GAS_OPCODE_SHL=3,
-            GAS_OPCODE_SHR=3,
-            GAS_OPCODE_SAR=3,
-            GAS_OPCODE_CLZ=5,
-            GAS_OPCODE_BLOBHASH=3,
             GAS_OPCODE_JUMP=8,
             GAS_OPCODE_JUMPI=10,
             GAS_OPCODE_CALLDATALOAD=3,
             GAS_OPCODE_CALLDATACOPY=3,
             GAS_OPCODE_CODECOPY=3,
-            GAS_OPCODE_RETURNDATACOPY=3,
             GAS_OPCODE_MLOAD=3,
             GAS_OPCODE_MSTORE=3,
             GAS_OPCODE_MSTORE8=3,
-            GAS_OPCODE_MCOPY=3,
             GAS_OPCODE_PUSH_N=3,
             GAS_OPCODE_DUP_N=3,
             GAS_OPCODE_SWAP_N=3,
@@ -1778,6 +1771,7 @@ class Byzantium(SpuriousDragon):
             GAS_PRECOMPILE_ECMUL=40_000,
             GAS_PRECOMPILE_ECPAIRING_BASE=100_000,
             GAS_PRECOMPILE_ECPAIRING_PER_POINT=80_000,
+            GAS_OPCODE_RETURNDATACOPY=3,
         )
 
 
@@ -1814,6 +1808,20 @@ class Constantinople(Byzantium):
         """At Constantinople, `CREATE2` opcode is added."""
         return [Opcodes.CREATE2] + super(Constantinople, cls).create_opcodes(
             block_number=block_number, timestamp=timestamp
+        )
+
+    @classmethod
+    def gas_costs(
+        cls, *, block_number: int = 0, timestamp: int = 0
+    ) -> GasCosts:
+        """At Constantinople, shift opcodes are introduced."""
+        return replace(
+            super(Constantinople, cls).gas_costs(
+                block_number=block_number, timestamp=timestamp
+            ),
+            GAS_OPCODE_SHL=3,
+            GAS_OPCODE_SHR=3,
+            GAS_OPCODE_SAR=3,
         )
 
     @classmethod
@@ -2700,6 +2708,8 @@ class Cancun(Shanghai):
                 block_number=block_number, timestamp=timestamp
             ),
             GAS_PRECOMPILE_POINT_EVALUATION=50_000,
+            GAS_OPCODE_BLOBHASH=3,
+            GAS_OPCODE_MCOPY=3,
         )
 
     @classmethod
@@ -2829,6 +2839,7 @@ class Prague(Cancun):
             GAS_PRECOMPILE_BLS_G2MAP=23_800,
             GAS_PRECOMPILE_BLS_PAIRING_BASE=37_700,
             GAS_PRECOMPILE_BLS_PAIRING_PER_PAIR=32_600,
+            GAS_OPCODE_CLZ=5,
         )
 
     @classmethod

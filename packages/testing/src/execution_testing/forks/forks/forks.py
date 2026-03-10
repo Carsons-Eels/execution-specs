@@ -46,7 +46,13 @@ from ..base_fork import (
     TransactionDataFloorCostCalculator,
     TransactionIntrinsicCostCalculator,
 )
-from ..gas_costs import GasCosts
+from ..gas_costs import (
+    GAS_HIGH,
+    GAS_LOW,
+    GAS_MID,
+    GAS_VERY_LOW,
+    GasCosts,
+)
 from .helpers import ceiling_division, fake_exponential
 
 CURRENT_FILE = Path(realpath(__file__))
@@ -202,38 +208,38 @@ class Frontier(BaseFork, solc_name="homestead"):
             GAS_PRECOMPILE_P256VERIFY=0,
             GAS_BLOCK_ACCESS_LIST_ITEM=0,
             # Opcode specific gas constants for repricing
-            GAS_OPCODE_ADD=3,
-            GAS_OPCODE_SUB=3,
-            GAS_OPCODE_MUL=5,
-            GAS_OPCODE_DIV=5,
-            GAS_OPCODE_SDIV=5,
-            GAS_OPCODE_MOD=5,
-            GAS_OPCODE_SMOD=5,
-            GAS_OPCODE_ADDMOD=8,
-            GAS_OPCODE_MULMOD=8,
-            GAS_OPCODE_SIGNEXTEND=5,
-            GAS_OPCODE_LT=3,
-            GAS_OPCODE_GT=3,
-            GAS_OPCODE_SLT=3,
-            GAS_OPCODE_SGT=3,
-            GAS_OPCODE_EQ=3,
-            GAS_OPCODE_ISZERO=3,
-            GAS_OPCODE_AND=3,
-            GAS_OPCODE_OR=3,
-            GAS_OPCODE_XOR=3,
-            GAS_OPCODE_NOT=3,
-            GAS_OPCODE_BYTE=3,
-            GAS_OPCODE_JUMP=8,
-            GAS_OPCODE_JUMPI=10,
-            GAS_OPCODE_CALLDATALOAD=3,
-            GAS_OPCODE_CALLDATACOPY=3,
-            GAS_OPCODE_CODECOPY=3,
-            GAS_OPCODE_MLOAD=3,
-            GAS_OPCODE_MSTORE=3,
-            GAS_OPCODE_MSTORE8=3,
-            GAS_OPCODE_PUSH_N=3,
-            GAS_OPCODE_DUP_N=3,
-            GAS_OPCODE_SWAP_N=3,
+            GAS_OPCODE_ADD=GAS_VERY_LOW,
+            GAS_OPCODE_SUB=GAS_VERY_LOW,
+            GAS_OPCODE_MUL=GAS_LOW,
+            GAS_OPCODE_DIV=GAS_LOW,
+            GAS_OPCODE_SDIV=GAS_LOW,
+            GAS_OPCODE_MOD=GAS_LOW,
+            GAS_OPCODE_SMOD=GAS_LOW,
+            GAS_OPCODE_ADDMOD=GAS_MID,
+            GAS_OPCODE_MULMOD=GAS_MID,
+            GAS_OPCODE_SIGNEXTEND=GAS_LOW,
+            GAS_OPCODE_LT=GAS_VERY_LOW,
+            GAS_OPCODE_GT=GAS_VERY_LOW,
+            GAS_OPCODE_SLT=GAS_VERY_LOW,
+            GAS_OPCODE_SGT=GAS_VERY_LOW,
+            GAS_OPCODE_EQ=GAS_VERY_LOW,
+            GAS_OPCODE_ISZERO=GAS_VERY_LOW,
+            GAS_OPCODE_AND=GAS_VERY_LOW,
+            GAS_OPCODE_OR=GAS_VERY_LOW,
+            GAS_OPCODE_XOR=GAS_VERY_LOW,
+            GAS_OPCODE_NOT=GAS_VERY_LOW,
+            GAS_OPCODE_BYTE=GAS_VERY_LOW,
+            GAS_OPCODE_JUMP=GAS_MID,
+            GAS_OPCODE_JUMPI=GAS_HIGH,
+            GAS_OPCODE_CALLDATALOAD=GAS_VERY_LOW,
+            GAS_OPCODE_CALLDATACOPY=GAS_VERY_LOW,
+            GAS_OPCODE_CODECOPY=GAS_VERY_LOW,
+            GAS_OPCODE_MLOAD=GAS_VERY_LOW,
+            GAS_OPCODE_MSTORE=GAS_VERY_LOW,
+            GAS_OPCODE_MSTORE8=GAS_VERY_LOW,
+            GAS_OPCODE_PUSH_N=GAS_VERY_LOW,
+            GAS_OPCODE_DUP_N=GAS_VERY_LOW,
+            GAS_OPCODE_SWAP_N=GAS_VERY_LOW,
         )
 
     @classmethod
@@ -1771,7 +1777,7 @@ class Byzantium(SpuriousDragon):
             GAS_PRECOMPILE_ECMUL=40_000,
             GAS_PRECOMPILE_ECPAIRING_BASE=100_000,
             GAS_PRECOMPILE_ECPAIRING_PER_POINT=80_000,
-            GAS_OPCODE_RETURNDATACOPY=3,
+            GAS_OPCODE_RETURNDATACOPY=GAS_VERY_LOW,
         )
 
 
@@ -1819,9 +1825,9 @@ class Constantinople(Byzantium):
             super(Constantinople, cls).gas_costs(
                 block_number=block_number, timestamp=timestamp
             ),
-            GAS_OPCODE_SHL=3,
-            GAS_OPCODE_SHR=3,
-            GAS_OPCODE_SAR=3,
+            GAS_OPCODE_SHL=GAS_VERY_LOW,
+            GAS_OPCODE_SHR=GAS_VERY_LOW,
+            GAS_OPCODE_SAR=GAS_VERY_LOW,
         )
 
     @classmethod
@@ -2708,8 +2714,8 @@ class Cancun(Shanghai):
                 block_number=block_number, timestamp=timestamp
             ),
             GAS_PRECOMPILE_POINT_EVALUATION=50_000,
-            GAS_OPCODE_BLOBHASH=3,
-            GAS_OPCODE_MCOPY=3,
+            GAS_OPCODE_BLOBHASH=GAS_VERY_LOW,
+            GAS_OPCODE_MCOPY=GAS_VERY_LOW,
         )
 
     @classmethod
@@ -2839,7 +2845,7 @@ class Prague(Cancun):
             GAS_PRECOMPILE_BLS_G2MAP=23_800,
             GAS_PRECOMPILE_BLS_PAIRING_BASE=37_700,
             GAS_PRECOMPILE_BLS_PAIRING_PER_PAIR=32_600,
-            GAS_OPCODE_CLZ=5,
+            GAS_OPCODE_CLZ=GAS_LOW,
         )
 
     @classmethod

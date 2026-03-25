@@ -2,7 +2,7 @@
 
 from typing import Any, Callable, ClassVar, Dict, Type
 
-from .base_fork import BaseFork
+from .base_fork import BaseFork, GasCosts
 
 
 class TransitionBaseMetaClass(type):
@@ -118,6 +118,17 @@ class TransitionBaseClass(metaclass=TransitionBaseMetaClass):
         new_cls = type(cls.__name__, (cls,), {})
         new_cls._env_gas_limit = env_gas_limit  # type: ignore[attr-defined]
         return new_cls
+
+    @classmethod
+    def gas_costs(
+        cls, *, block_number: int = 0, timestamp: int = 0
+    ) -> GasCosts:
+        """
+        Return Gas Costs for the active fork.
+        """
+        return cls.fork_at(
+            block_number=block_number, timestamp=timestamp
+        ).gas_costs(block_number=block_number, timestamp=timestamp)
 
 
 def transition_fork(

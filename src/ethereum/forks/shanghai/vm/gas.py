@@ -363,3 +363,6 @@ def init_code_cost(init_code_length: Uint) -> Uint:
 
     """
     return GasCosts.CODE_INIT_PER_WORD * ceil32(init_code_length) // Uint(32)
+
+
+apply_spec_repricing("Shanghai", globals())

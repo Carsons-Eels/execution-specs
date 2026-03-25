@@ -99,6 +99,7 @@ class Frontier(
         """
         Return dataclass with the defined gas costs constants for genesis.
         """
+        del block_number, timestamp
         return GasCosts(
             # Tiers
             BASE=BASE,

@@ -12,14 +12,14 @@ from execution_testing.forks.gas_costs import GasCosts
 from execution_testing.forks.helpers import get_forks
 
 OPCODE_TIER_FIELDS = (
-    "GAS_JUMPDEST",
-    "GAS_BASE",
-    "GAS_VERY_LOW",
-    "GAS_LOW",
-    "GAS_MID",
-    "GAS_HIGH",
-    "GAS_BLOCK_HASH",
-    "GAS_WARM_SLOAD",
+    "OPCODE_JUMPDEST",
+    "BASE",
+    "VERY_LOW",
+    "LOW",
+    "MID",
+    "HIGH",
+    "OPCODE_BLOCKHASH",
+    "WARM_SLOAD",
 )
 
 
@@ -87,7 +87,7 @@ def _get_helper_method_fields(
                     if field_name in src:
                         found.add(field_name)
                 if name == "_with_memory_expansion":
-                    found.add("GAS_MEMORY")
+                    found.add("MEMORY_PER_WORD")
                 if found:
                     helper_fields[name] = found
     return helper_fields

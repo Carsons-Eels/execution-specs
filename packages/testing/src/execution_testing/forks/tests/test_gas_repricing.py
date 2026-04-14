@@ -10,6 +10,7 @@ from ethereum.utils.gas_repricing import (
     apply_spec_repricing,
     load_repricing_config,
 )
+from ethereum_types.numeric import U64, Uint
 
 from ..forks.forks import Osaka, Prague
 from ..forks.transition import PragueToOsakaAtTime15k
@@ -70,17 +71,17 @@ class TestLoadRepricingConfig:
     ) -> None:
         """Test that a minimal valid config loads correctly."""
         config_file = tmp_path / "good.json"
-        config_file.write_text(json.dumps({"Osaka": {"GAS_TX_BASE": 25000}}))
+        config_file.write_text(json.dumps({"Osaka": {"TX_BASE": 25000}}))
         monkeypatch.setenv(_ENV_VAR, str(config_file))
         config = load_repricing_config()
-        assert config == {"Osaka": {"GAS_TX_BASE": 25000}}
+        assert config == {"Osaka": {"TX_BASE": 25000}}
 
     def test_warning_emitted(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
         """Test that warnings are emitted when repricing has taken place."""
         config_file = tmp_path / "warn.json"
-        config_file.write_text(json.dumps({"Osaka": {"GAS_TX_BASE": 1}}))
+        config_file.write_text(json.dumps({"Osaka": {"TX_BASE": 1}}))
         monkeypatch.setenv(_ENV_VAR, str(config_file))
         with pytest.warns(UserWarning, match="Gas repricing config loaded"):
             load_repricing_config()
@@ -105,9 +106,7 @@ class TestApplyRepricing:
         values in Osaka.
         """
         config_file = tmp_path / "other.json"
-        config_file.write_text(
-            json.dumps({"Amsterdam": {"GAS_TX_BASE": 25000}})
-        )
+        config_file.write_text(json.dumps({"Amsterdam": {"TX_BASE": 25000}}))
         monkeypatch.setenv(_ENV_VAR, str(config_file))
         base = _default_osaka_costs()
         with pytest.warns(UserWarning):
@@ -121,13 +120,13 @@ class TestApplyRepricing:
         Test that repricing a single field does not affect the other fields.
         """
         config_file = tmp_path / "single.json"
-        config_file.write_text(json.dumps({"Osaka": {"GAS_TX_BASE": 99999}}))
+        config_file.write_text(json.dumps({"Osaka": {"TX_BASE": 99999}}))
         monkeypatch.setenv(_ENV_VAR, str(config_file))
         base = _default_osaka_costs()
         with pytest.warns(UserWarning):
             result = apply_repricing("Osaka", base)
-        assert result.GAS_TX_BASE == 99999
-        assert result.GAS_COLD_ACCOUNT_ACCESS == base.GAS_COLD_ACCOUNT_ACCESS
+        assert result.TX_BASE == 99999
+        assert result.COLD_ACCOUNT_ACCESS == base.COLD_ACCOUNT_ACCESS
 
     def test_invalid_field_name(
         self,
@@ -153,7 +152,7 @@ class TestApplyRepricing:
         """Test that a non-int value raises TypeError."""
         config_file = tmp_path / "bad_type.json"
         config_file.write_text(
-            json.dumps({"Osaka": {"GAS_TX_BASE": "not_a_number"}})
+            json.dumps({"Osaka": {"TX_BASE": "not_a_number"}})
         )
         monkeypatch.setenv(_ENV_VAR, str(config_file))
         base = _default_osaka_costs()
@@ -171,13 +170,13 @@ class TestIntegration:
         """Test that Osaka gas costs are properly overwritten by repricing."""
         config_file = tmp_path / "osaka.json"
         config_file.write_text(
-            json.dumps({"Osaka": {"GAS_COLD_ACCOUNT_ACCESS": 2100}})
+            json.dumps({"Osaka": {"COLD_ACCOUNT_ACCESS": 2100}})
         )
         monkeypatch.setenv(_ENV_VAR, str(config_file))
         with pytest.warns(UserWarning):
             costs = Osaka.gas_costs()
-        assert costs.GAS_COLD_ACCOUNT_ACCESS == 2100
-        assert costs.GAS_TX_BASE == _default_osaka_costs().GAS_TX_BASE
+        assert costs.COLD_ACCOUNT_ACCESS == 2100
+        assert costs.TX_BASE == _default_osaka_costs().TX_BASE
 
     def test_osaka_gas_costs_without_override(self) -> None:
         """
@@ -194,11 +193,11 @@ class TestIntegration:
         Test repricing during fork transition.
         """
         config_file = tmp_path / "transition.json"
-        config_file.write_text(json.dumps({"Osaka": {"GAS_TX_BASE": 50000}}))
+        config_file.write_text(json.dumps({"Osaka": {"TX_BASE": 50000}}))
         monkeypatch.setenv(_ENV_VAR, str(config_file))
         with pytest.warns(UserWarning):
             costs = PragueToOsakaAtTime15k.gas_costs(timestamp=15000)
-        assert costs.GAS_TX_BASE == 50000
+        assert costs.TX_BASE == 50000
 
     def test_transition_fork_pre_transition(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
@@ -208,32 +207,30 @@ class TestIntegration:
         prague cost.
         """
         config_file = tmp_path / "transition.json"
-        config_file.write_text(json.dumps({"Osaka": {"GAS_TX_BASE": 50000}}))
+        config_file.write_text(json.dumps({"Osaka": {"TX_BASE": 50000}}))
         monkeypatch.setenv(_ENV_VAR, str(config_file))
         with pytest.warns(UserWarning):
             costs = PragueToOsakaAtTime15k.gas_costs(timestamp=0)
-        assert costs.GAS_TX_BASE == Prague._base_gas_costs().GAS_TX_BASE
+        assert costs.TX_BASE == Prague._base_gas_costs().TX_BASE
 
 
 class TestSpecSideRepricing:
-    """Tests for apply_spec_repricing (module globals mutation)."""
+    """Tests for apply_spec_repricing (GasCosts mutation)."""
 
-    def _make_globals(self) -> dict:
-        from ethereum_types.numeric import U64, Uint
+    def _make_fake_gas_costs(self) -> type:
+        class _FakeGasCosts:
+            BASE = Uint(2)
+            LOW = Uint(5)
+            BLOB_SCHEDULE_TARGET = U64(6)
 
-        return {
-            "GAS_BASE": Uint(2),
-            "GAS_LOW": Uint(5),
-            "BLOB_SCHEDULE_TARGET": U64(6),
-            "__name__": "test_module",
-        }
+        return _FakeGasCosts
 
     def test_no_config(self) -> None:
         """Test no-op when env var is unset."""
-        globs = self._make_globals()
-        original = dict(globs)
-        apply_spec_repricing("TestFork", globs)
-        assert globs == original
+        fake_gas_costs = self._make_fake_gas_costs()
+        original = fake_gas_costs
+        apply_spec_repricing("TestFork", fake_gas_costs)
+        assert fake_gas_costs == original
 
     def test_fork_not_in_config(
         self,
@@ -242,13 +239,13 @@ class TestSpecSideRepricing:
     ) -> None:
         """Test no-op when fork is absent from config."""
         config_file = tmp_path / "other_fork.json"
-        config_file.write_text(json.dumps({"OtherFork": {"GAS_BASE": 99}}))
+        config_file.write_text(json.dumps({"OtherFork": {"AS_BASE": 99}}))
         monkeypatch.setenv(_ENV_VAR, str(config_file))
-        globs = self._make_globals()
-        original = dict(globs)
+        fake_gas_costs = self._make_fake_gas_costs()
+        original = fake_gas_costs
         with pytest.warns(UserWarning):
-            apply_spec_repricing("TestFork", globs)
-        assert globs == original
+            apply_spec_repricing("TestFork", fake_gas_costs)
+        assert fake_gas_costs == original
 
     def test_mutates_with_correct_type(
         self,
@@ -263,21 +260,21 @@ class TestSpecSideRepricing:
             json.dumps(
                 {
                     "TestFork": {
-                        "GAS_BASE": 99,
+                        "BASE": 99,
                         "BLOB_SCHEDULE_TARGET": 12,
                     }
                 }
             )
         )
         monkeypatch.setenv(_ENV_VAR, str(config_file))
-        globs = self._make_globals()
+        fake_gas_costs = self._make_fake_gas_costs()
         with pytest.warns(UserWarning):
-            apply_spec_repricing("TestFork", globs)
-        assert globs["GAS_BASE"] == Uint(99)
-        assert isinstance(globs["GAS_BASE"], Uint)
-        assert globs["BLOB_SCHEDULE_TARGET"] == U64(12)
-        assert isinstance(globs["BLOB_SCHEDULE_TARGET"], U64)
-        assert globs["GAS_LOW"] == Uint(5)
+            apply_spec_repricing("TestFork", fake_gas_costs)
+        assert fake_gas_costs.BASE == Uint(99)  # type: ignore[attr-defined]
+        assert isinstance(fake_gas_costs.BASE, Uint)  # type: ignore[attr-defined]
+        assert fake_gas_costs.BLOB_SCHEDULE_TARGET == U64(12)  # type: ignore[attr-defined]
+        assert isinstance(fake_gas_costs.BLOB_SCHEDULE_TARGET, U64)  # type: ignore[attr-defined]
+        assert fake_gas_costs.LOW == Uint(5)  # type: ignore[attr-defined]
 
     def test_unknown_field_raises(
         self,
@@ -290,16 +287,16 @@ class TestSpecSideRepricing:
             json.dumps({"TestFork": {"NOT_A_CONSTANT": 42}})
         )
         monkeypatch.setenv(_ENV_VAR, str(config_file))
-        globs = self._make_globals()
+        fake_gas_costs = self._make_fake_gas_costs()
         with pytest.warns(UserWarning):
             with pytest.raises(ValueError, match="NOT_A_CONSTANT"):
-                apply_spec_repricing("TestFork", globs)
+                apply_spec_repricing("TestFork", fake_gas_costs)
 
     def test_nonexistent_file_raises(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test that a missing config file raises FileNotFoundError."""
         monkeypatch.setenv(_ENV_VAR, "/nonexistent/config.json")
-        globs = self._make_globals()
+        fake_gas_costs = self._make_fake_gas_costs()
         with pytest.raises(FileNotFoundError):
-            apply_spec_repricing("TestFork", globs)
+            apply_spec_repricing("TestFork", fake_gas_costs)

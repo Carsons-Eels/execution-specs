@@ -185,13 +185,13 @@ class EIP4844(
         return True
 
     @classmethod
-    def gas_costs(
+    def _base_gas_costs(
         cls, *, block_number: int = 0, timestamp: int = 0
     ) -> GasCosts:
         """On Cancun, the point evaluation precompile gas cost is set."""
         del block_number, timestamp
         return replace(
-            super(EIP4844, cls).gas_costs(),
+            super(EIP4844, cls)._base_gas_costs(),
             PRECOMPILE_POINT_EVALUATION=50_000,
         )
 

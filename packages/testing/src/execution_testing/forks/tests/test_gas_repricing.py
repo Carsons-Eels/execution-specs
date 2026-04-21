@@ -10,6 +10,7 @@ from ethereum.utils.gas_repricing import (
     apply_spec_repricing,
     load_repricing_config,
 )
+from ethereum_types.numeric import U64, Uint
 
 from ..forks.forks import Osaka, Prague
 from ..forks.transition import PragueToOsakaAtTime15k
@@ -214,24 +215,22 @@ class TestIntegration:
 
 
 class TestSpecSideRepricing:
-    """Tests for apply_spec_repricing (module globals mutation)."""
+    """Tests for apply_spec_repricing (GasCosts mutation)."""
 
-    def _make_globals(self) -> dict:
-        from ethereum_types.numeric import U64, Uint
+    def _make_fake_gas_costs(self) -> type:
+        class _FakeGasCosts:
+            BASE = Uint(2)
+            LOW = Uint(5)
+            BLOB_SCHEDULE_TARGET = U64(6)
 
-        return {
-            "BASE": Uint(2),
-            "LOW": Uint(5),
-            "BLOB_SCHEDULE_TARGET": U64(6),
-            "__name__": "test_module",
-        }
+        return _FakeGasCosts
 
     def test_no_config(self) -> None:
         """Test no-op when env var is unset."""
-        globs = self._make_globals()
-        original = dict(globs)
-        apply_spec_repricing("TestFork", globs)
-        assert globs == original
+        fake_gas_costs = self._make_fake_gas_costs()
+        original = fake_gas_costs
+        apply_spec_repricing("TestFork", fake_gas_costs)
+        assert fake_gas_costs == original
 
     def test_fork_not_in_config(
         self,
@@ -240,13 +239,13 @@ class TestSpecSideRepricing:
     ) -> None:
         """Test no-op when fork is absent from config."""
         config_file = tmp_path / "other_fork.json"
-        config_file.write_text(json.dumps({"OtherFork": {"BASE": 99}}))
+        config_file.write_text(json.dumps({"OtherFork": {"AS_BASE": 99}}))
         monkeypatch.setenv(_ENV_VAR, str(config_file))
-        globs = self._make_globals()
-        original = dict(globs)
+        fake_gas_costs = self._make_fake_gas_costs()
+        original = fake_gas_costs
         with pytest.warns(UserWarning):
-            apply_spec_repricing("TestFork", globs)
-        assert globs == original
+            apply_spec_repricing("TestFork", fake_gas_costs)
+        assert fake_gas_costs == original
 
     def test_mutates_with_correct_type(
         self,
@@ -268,14 +267,14 @@ class TestSpecSideRepricing:
             )
         )
         monkeypatch.setenv(_ENV_VAR, str(config_file))
-        globs = self._make_globals()
+        fake_gas_costs = self._make_fake_gas_costs()
         with pytest.warns(UserWarning):
-            apply_spec_repricing("TestFork", globs)
-        assert globs["BASE"] == Uint(99)
-        assert isinstance(globs["BASE"], Uint)
-        assert globs["BLOB_SCHEDULE_TARGET"] == U64(12)
-        assert isinstance(globs["BLOB_SCHEDULE_TARGET"], U64)
-        assert globs["LOW"] == Uint(5)
+            apply_spec_repricing("TestFork", fake_gas_costs)
+        assert fake_gas_costs.BASE == Uint(99)  # type: ignore[attr-defined]
+        assert isinstance(fake_gas_costs.BASE, Uint)  # type: ignore[attr-defined]
+        assert fake_gas_costs.BLOB_SCHEDULE_TARGET == U64(12)  # type: ignore[attr-defined]
+        assert isinstance(fake_gas_costs.BLOB_SCHEDULE_TARGET, U64)  # type: ignore[attr-defined]
+        assert fake_gas_costs.LOW == Uint(5)  # type: ignore[attr-defined]
 
     def test_unknown_field_raises(
         self,
@@ -288,16 +287,16 @@ class TestSpecSideRepricing:
             json.dumps({"TestFork": {"NOT_A_CONSTANT": 42}})
         )
         monkeypatch.setenv(_ENV_VAR, str(config_file))
-        globs = self._make_globals()
+        fake_gas_costs = self._make_fake_gas_costs()
         with pytest.warns(UserWarning):
             with pytest.raises(ValueError, match="NOT_A_CONSTANT"):
-                apply_spec_repricing("TestFork", globs)
+                apply_spec_repricing("TestFork", fake_gas_costs)
 
     def test_nonexistent_file_raises(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test that a missing config file raises FileNotFoundError."""
         monkeypatch.setenv(_ENV_VAR, "/nonexistent/config.json")
-        globs = self._make_globals()
+        fake_gas_costs = self._make_fake_gas_costs()
         with pytest.raises(FileNotFoundError):
-            apply_spec_repricing("TestFork", globs)
+            apply_spec_repricing("TestFork", fake_gas_costs)

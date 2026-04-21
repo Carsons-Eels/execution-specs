@@ -15,6 +15,7 @@ from execution_testing import (
     Fork,
     Hash,
     Op,
+    Opcode,
     StateTestFiller,
     Transaction,
 )
@@ -26,6 +27,28 @@ REFERENCE_SPEC_GIT_PATH = ref_spec_1153.git_path
 REFERENCE_SPEC_VERSION = ref_spec_1153.version
 
 pytestmark = [pytest.mark.valid_from("Cancun")]
+
+
+def _make_caller_bytecode(
+    call_opcode: Opcode, callee_bytecode: Bytecode
+) -> Callable[[Fork], Bytecode]:
+    def _(fork: Fork) -> Bytecode:
+        return (
+            Op.TSTORE(0, 420)
+            + Op.TSTORE(1, 420)
+            + Op.SSTORE(
+                0,
+                call_opcode(
+                    gas=callee_bytecode.gas_cost(fork) - 1,
+                    address=Op.CALLDATALOAD(0),
+                ),
+            )
+            + Op.SSTORE(1, Op.TLOAD(0))
+            + Op.SSTORE(2, Op.TLOAD(1))
+            + Op.STOP
+        )
+
+    return _
 
 
 class DynamicCallContextTestCases(EnumMeta):
@@ -192,21 +215,8 @@ class DynamicCallContextTestCases(EnumMeta):
                     f"{call_opcode._name_} upon out of gas during TSTORE. "
                     "Note: Gas passed to sub-call is capped."
                 ),
-                "caller_bytecode": lambda fork,
-                call_opcode=call_opcode,
-                callee_bytecode=callee_bytecode: (
-                    Op.TSTORE(0, 420)
-                    + Op.TSTORE(1, 420)
-                    + Op.SSTORE(
-                        0,
-                        call_opcode(
-                            gas=callee_bytecode.gas_cost(fork) - 1,
-                            address=Op.CALLDATALOAD(0),
-                        ),
-                    )
-                    + Op.SSTORE(1, Op.TLOAD(0))
-                    + Op.SSTORE(2, Op.TLOAD(1))
-                    + Op.STOP
+                "caller_bytecode": _make_caller_bytecode(
+                    call_opcode, callee_bytecode
                 ),
                 "callee_bytecode": callee_bytecode,
                 "expected_caller_storage": {0: 0, 1: 420, 2: 420},

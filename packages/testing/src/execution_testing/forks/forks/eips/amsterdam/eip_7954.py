@@ -16,9 +16,9 @@ class EIP7954(BaseFork):
     @classmethod
     def max_code_size(cls) -> int:
         """Max contract code size is 32 KiB."""
-        return 32 * 1024
+        return 64 * 1024
 
     @classmethod
     def max_initcode_size(cls) -> int:
-        """Max initcode size is 64 KiB."""
-        return 64 * 1024
+        """Max initcode size is 128 KiB."""
+        return 128 * 1024
